@@ -24,6 +24,21 @@ Copy the `vocab_sentence_generator/` folder into your Anki add-ons directory and
 
 Default field names are **Word** (source) and **Front** (destination). Change them in Settings if your note type uses different names.
 
+4. Add the following HTML code to the front template: 
+
+{{Front}}
+
+<script>
+(function () {
+  var sentences = document.querySelectorAll('.vsg-sentence');
+  if (sentences.length === 0) return;
+  var pick = Math.floor(Math.random() * sentences.length);
+  sentences[pick].style.display = 'inline';
+})();
+</script>
+
+If using integration with TTS make the TTS is reading from the word field. 
+
 ---
 
 ## Usage
