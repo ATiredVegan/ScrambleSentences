@@ -1,0 +1,10 @@
+{
+    "api_key": "",
+    "model": "claude-sonnet-4-5",
+    "word_field": "Word",
+    "front_field": "Front",
+    "num_sentences": 3,
+    "language": "English",
+    "difficulty": "intermediate",
+    "include_translation": false
+}
