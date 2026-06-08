@@ -37,6 +37,8 @@ Default field names are **Word** (source) and **Front** (destination). Change th
 })();
 </script>
 
+---
+
 If using integration with TTS make the TTS is reading from the word field. 
 
 ---
