@@ -62,35 +62,43 @@ def get_language_list():
 
 _session_picks = {}  # {card_id: sentence_html}
 
-# ── card_will_show hook ───────────────────────────────────────────────────────
+# ── Hooks ─────────────────────────────────────────────────────────────────────
 
-def on_card_will_show(html: str, card, kind: str) -> str:
+def _pick_sentence(card) -> str | None:
+    """Parse sentences from the card's Front field and pick one for this session."""
+    try:
+        note = card.note()
+        front_field = get_config()["front_field"]
+        if front_field not in note:
+            return None
+        field_html = note[front_field]
+        if "vsg-sentence" not in field_html:
+            return None
+        sentences = re.findall(
+            r'<span class="vsg-sentence"[^>]*>(.*?)</span>',
+            field_html,
+            re.DOTALL,
+        )
+        if not sentences:
+            return None
+        if card.id not in _session_picks:
+            _session_picks[card.id] = random.choice(sentences)
+        return _session_picks[card.id]
+    except Exception:
+        return None
+
+def on_reviewer_will_show_question(reviewer) -> None:
     """
-    Fires before each card render. If the card's Front field contains
-    vsg-sentence spans, pick one (consistently per session) and replace
-    the entire vsg-sentences block with just that sentence.
+    Fires before the question is shown — early enough that AwesomeTTS
+    hasn't read Front TTS yet. We pick the sentence here and write it
+    to Front TTS so AwesomeTTS reads the correct value on first load.
     """
-    if "vsg-sentence" not in html:
-        return html
-
-    card_id = card.id
-
-    # Parse out all sentences from the HTML
-    sentences = re.findall(
-        r'<span class="vsg-sentence"[^>]*>(.*?)</span>',
-        html,
-        re.DOTALL,
-    )
-    if not sentences:
-        return html
-
-    # Reuse the same sentence for this card within the session
-    if card_id not in _session_picks:
-        _session_picks[card_id] = random.choice(sentences)
-
-    chosen = _session_picks[card_id]
-
-    # Write plain text version to Front TTS field if it exists on the note
+    card = reviewer.card
+    if card is None:
+        return
+    chosen = _pick_sentence(card)
+    if chosen is None:
+        return
     try:
         note = card.note()
         if "Front TTS" in note:
@@ -101,7 +109,16 @@ def on_card_will_show(html: str, card, kind: str) -> str:
     except Exception:
         pass
 
-    # Replace the whole vsg-sentences div with just the chosen sentence
+def on_card_will_show(html: str, card, kind: str) -> str:
+    """
+    Fires just before the card HTML is rendered. Replaces all vsg-sentence
+    spans with just the one chosen sentence.
+    """
+    if "vsg-sentence" not in html:
+        return html
+    chosen = _pick_sentence(card)
+    if chosen is None:
+        return html
     html = re.sub(
         r'<div class="vsg-sentences">.*?</div>',
         f'<div class="vsg-sentences">{chosen}</div>',
@@ -110,6 +127,7 @@ def on_card_will_show(html: str, card, kind: str) -> str:
     )
     return html
 
+gui_hooks.reviewer_will_show_question.append(on_reviewer_will_show_question)
 gui_hooks.card_will_show.append(on_card_will_show)
 
 # ── Claude API ────────────────────────────────────────────────────────────────
