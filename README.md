@@ -1,12 +1,25 @@
 # ScrambleSentences for language learning
 
-Type a word → click **✨ Generate** → the **Front** field fills with AI-generated example sentences with the word bolded. Fill in **Back** yourself.
+Ever memorize the content of a sentence mining card rather than the word you're trying to memorize? Look no further. ScrambleSentences generates random sentences for a user-given vocabulary word, and then randomly cycles through them every time you review the card. That way you're memorizing the word rather than the context of the sentence. 
+
+
+---
+
+## How it works
+
+1. Type a vocabulary word into the **Word** field
+2. Click **✨ Generate** in the editor toolbar
+3. Pick a language from the popup and hit OK
+4. The **Front** field fills with AI-generated sentences (word bolded)
+5. Fill in **Back** manually and save the card
+
+During review, one sentence is shown at random. The same sentence is shown all day — on a new day a different one is picked automatically.
 
 ---
 
 ## Installation
 
-Copy the `vocab_sentence_generator/` folder into your Anki add-ons directory and restart Anki:
+Copy the `ScrambleSentences` folder into your Anki add-ons directory and restart Anki:
 
 | OS | Path |
 |----|------|
@@ -16,52 +29,103 @@ Copy the `vocab_sentence_generator/` folder into your Anki add-ons directory and
 
 ---
 
+## Required note fields
+
+Your note type must have these fields:
+
+| Field | Purpose |
+|-------|---------|
+| `Word` | The vocabulary word you type in |
+| `Front` | Receives the AI-generated sentences (HTML) |
+| `Back` | You fill this in manually |
+
+### Optional TTS fields
+
+If you want AwesomeTTS to read the displayed sentence aloud, add these two fields:
+
+| Field | Purpose |
+|-------|---------|
+| `Front TTS` | Plain-text version of the chosen sentence (read by AwesomeTTS) |
+| `Front TTS Date` | Stores the date the sentence was last picked (used internally) |
+
+These fields do not need to appear on your card template — they just need to exist on the note type.
+
+### Recommended note type layout
+
+```
+Word           ← you type the vocab word here
+Front          ← AI-generated sentences (displayed on card)
+Back           ← you fill in manually
+Front TTS      ← plain text for AwesomeTTS (optional)
+Front TTS Date ← internal date tracking (optional)
+```
+
+### Card template
+
+Your Front template only needs:
+
+```html
+{{Front}}
+```
+
+No JavaScript required — sentence selection is handled by the add-on.
+
+If using AwesomeTTS, add to your Front template:
+
+```html
+{{Front}}
+<tts service="google" voice="en">{{Front TTS}}</tts>
+```
+
+---
+
 ## Setup
 
-1. Get an Anthropic API key at https://console.anthropic.com
-2. In Anki: **Tools → Vocab Sentence Generator → Settings**
-3. Paste your API key and save
+Go to **Tools → ScrambleSentences for language learning → Settings**
 
-4. Make a new note type. Default field names are **Word** (source), **Front** (destination), and **Front TTS** (sentence to be read) Change them in Settings if your note type uses different names.
+### Provider
 
+Choose between **Anthropic (Claude)** (default) or **OpenAI**.
 
----
-
-If using integration with TTS make sure the TTS is reading from the word front TTS field . 
-
----
-
-## Usage
-
-1. Open the **Add** dialog
-2. Type the vocabulary word into the **Word** field
-3. Click **✨ Generate** in the editor toolbar
-4. The **Front** field is filled with numbered sentences, word bolded
-5. Fill in **Back** manually and save the card
-
----
-
-## Settings
+#### Anthropic
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| API key | — | Your Anthropic API key |
-| Word field | `Word` | Field containing the vocabulary word |
-| Front field | `Front` | Field that receives the generated sentences |
-| Language | `English` | Language for sentences |
+| Anthropic API key | — | Get one at https://console.anthropic.com (starts with `sk-ant-`) |
+| Anthropic model | `claude-sonnet-4-5` | Claude model to use |
+
+#### OpenAI
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| OpenAI API key | — | Get one at https://platform.openai.com (starts with `sk-`) |
+| OpenAI model | `gpt-4o` | OpenAI model to use |
+
+### Generation options
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Word field name | `Word` | Field containing the vocabulary word |
+| Front field name | `Front` | Field that receives the generated sentences |
 | Number of sentences | `3` | How many sentences to generate (1–10) |
-| Difficulty | `beginner` / `intermediate` / `advanced` |
-| Include translation | off | Adds an English translation after each sentence |
+| Difficulty | `intermediate` | `beginner` / `intermediate` / `advanced` |
+| Default language | `English` | Pre-selected language in the picker |
+| Extra languages | — | Comma-separated list of additional languages to add to the picker |
+| Include translation | off | Appends an English translation after each sentence |
 
 ---
 
-## HyperTTS integration (optional)
+## Supported languages
 
-If your note type has a field called **`Front TTS`**, the add-on automatically writes a plain-text version of the sentences there (no HTML, no numbering). Point HyperTTS at that field to generate audio pronunciation for the sentences.
+English, Spanish, French, German, Italian, Portuguese, Japanese, Chinese, Korean, Arabic, Russian, Dutch, Polish, Turkish, Swedish — plus any languages you add via **Extra languages** in Settings.
 
-To add the OpenAI TTS voice service to HyperTTS:
+---
 
-1. Copy `service_openai_tts.py` into HyperTTS's services folder:
+## HyperTTS / OpenAI TTS (optional)
+
+The zip includes `service_openai_tts.py`, a HyperTTS service plugin that adds OpenAI TTS voices. To install:
+
+1. Copy `service_openai_tts.py` into the HyperTTS services folder:
 
    | OS | Path |
    |----|------|
@@ -70,6 +134,16 @@ To add the OpenAI TTS voice service to HyperTTS:
    | Linux | `~/.local/share/Anki2/addons21/111623432/hypertts_addon/services/` |
 
 2. Restart Anki
-3. **Tools → HyperTTS: Services Configuration** → enable **OpenAI TTS** → enter your OpenAI API key
+3. Go to **Tools → HyperTTS: Services Configuration**, enable **OpenAI TTS**, and enter your OpenAI API key
 
-Voices: Alloy, Echo, Fable, Onyx, Nova, Shimmer — with standard and HD quality options.
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| API error 401 | Wrong or missing API key for the selected provider |
+| API error 404 | Wrong model name — check the model string in Settings |
+| API error 429 | Rate limit hit — wait a moment and try again |
+| No sentence shown on card | Make sure your Front template contains `{{Front}}` |
+| AwesomeTTS reads wrong sentence | Ensure `Front TTS` and `Front TTS Date` fields exist on your note type |

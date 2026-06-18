@@ -4,7 +4,7 @@
     "min_point_version": 231000,
     "max_point_version": -1,
     "human_version": "1.2.0",
-    "author": "Josh Derrick",
+    "author": "You",
     "description": "Type a word in the Word field, click ✨ Generate, and the Front field is filled with AI-generated example sentences (word bolded). Integrates with HyperTTS.",
     "conflicts": []
 }
