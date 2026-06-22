@@ -125,11 +125,24 @@ def on_card_will_show(html: str, card, kind: str) -> str:
     except Exception:
         chosen = random.choice(sentences)
 
+    plain_chosen = _plain(chosen)
+
+    # Replace the vsg-sentences block with just the chosen sentence
     html = re.sub(
         r'<div class="vsg-sentences">.*?</div>',
         f'<div class="vsg-sentences">{chosen}</div>',
         html, flags=re.DOTALL,
     )
+
+    # Also replace the content inside any <tts> tag so AwesomeTTS reads
+    # the correct sentence. Anki resolves {{Front TTS}} before this hook
+    # runs, so the HTML still has the old/empty text baked in.
+    html = re.sub(
+        r'(<tts\b[^>]*>)(.*?)(</tts>)',
+        rf'\g<1>{plain_chosen}\g<3>',
+        html, flags=re.DOTALL,
+    )
+
     return html
 
 gui_hooks.card_will_show.append(on_card_will_show)
