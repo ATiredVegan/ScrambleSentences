@@ -170,7 +170,10 @@ def _build_prompt(word: str, language: str, cfg: dict) -> str:
 
 def _parse_lines(raw_text: str) -> list:
     lines = [l.strip() for l in raw_text.strip().splitlines() if l.strip()]
-    return [re.sub(r"^\d+\.\s*", "", l) for l in lines]
+    lines = [re.sub(r"^\d+\.\s*", "", l) for l in lines]
+    # Convert markdown bold **word** to HTML <b>word</b>
+    lines = [re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", l) for l in lines]
+    return lines
 
 def _call_anthropic(prompt: str, cfg: dict) -> list:
     payload = json.dumps({
